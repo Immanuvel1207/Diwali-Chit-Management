@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
-const API_URL = 'https://diwali-chit-management.onrender.com';
+const API_URL = 'http://localhost:4000';
 
 function App() {
   const [activeForm, setActiveForm] = useState('');
