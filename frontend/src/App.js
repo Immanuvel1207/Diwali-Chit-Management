@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
-const API_URL = 'http://localhost:4000';
+const API_URL = 'https://diwali-chit-management.onrender.com';
 
 function App() {
   const [activeForm, setActiveForm] = useState('');
@@ -267,14 +267,14 @@ function App() {
         </div>
       )}
 
-      <div className="users-list">
+      {/* <div className="users-list">
         <h2>Users</h2>
         <div className="card-container">
           {users.map((user) => (
             <UserCard key={user._id} user={user} />
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
