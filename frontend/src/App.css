@@ -1,11 +1,11 @@
 .App {
   font-family: Arial, sans-serif;
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-h1 {
+h1, h2 {
   text-align: center;
   color: #333;
 }
@@ -30,12 +30,18 @@ button {
   margin: 4px 2px;
   cursor: pointer;
   border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
 }
 
 .form-container {
   background-color: #f2f2f2;
   padding: 20px;
   border-radius: 5px;
+  margin-bottom: 20px;
 }
 
 form {
@@ -44,10 +50,11 @@ form {
   gap: 10px;
 }
 
-input , select{
+input, select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 16px;
 }
 
 .result-container {
@@ -60,4 +67,32 @@ input , select{
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 15px;
+  width: 250px;
+}
+
+.card h3 {
+  margin-top: 0;
+  color: #4CAF50;
+}
+
+.card p {
+  margin: 5px 0;
+}
+
+.users-list {
+  margin-top: 30px;
 }

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 const API_URL = 'http://localhost:3000';
@@ -9,10 +11,17 @@ function App() {
   const [result, setResult] = useState('');
   const [searchParams, setSearchParams] = useState({ village: '', category: '' });
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchAllUsers();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm.length > 2) {
+      handleSearch();
+    }
+  }, [searchTerm]);
 
   const fetchAllUsers = async () => {
     try {
@@ -29,10 +38,14 @@ function App() {
       const response = await axios.post(`${API_URL}${endpoint}`, data);
       setResult(JSON.stringify(response.data, null, 2));
       if (endpoint === '/add_user') {
-        fetchAllUsers(); // Refresh user list after adding a new user
+        toast.success(`User added with ID: ${response.data.data.id}`);
+        fetchAllUsers();
+      } else if (endpoint === '/add_payments') {
+        toast.success(`Payment added successfully for month: ${data.p_month}, amount: ${data.amount}`);
       }
     } catch (error) {
       setResult(JSON.stringify(error.response.data, null, 2));
+      toast.error('An error occurred');
     }
   };
 
@@ -42,20 +55,42 @@ function App() {
       setResult(JSON.stringify(response.data, null, 2));
     } catch (error) {
       setResult(JSON.stringify(error.response.data, null, 2));
+      toast.error('An error occurred');
     }
   };
 
   const handleSearch = async () => {
     try {
-      const response = await axios.get(`${API_URL}/search_users`, { params: searchParams });
-      setResult(JSON.stringify(response.data, null, 2));
+      const response = await axios.get(`${API_URL}/search_users`, { params: { ...searchParams, name: searchTerm } });
+      setUsers(response.data);
     } catch (error) {
-      setResult(JSON.stringify(error.response.data, null, 2));
+      console.error('Error searching users:', error);
+      toast.error('An error occurred while searching');
     }
   };
 
+  const UserCard = ({ user }) => (
+    <div className="card">
+      <h3>{user.c_name}</h3>
+      <p>ID: {user._id}</p>
+      <p>Village: {user.c_vill}</p>
+      <p>Category: {user.c_category}</p>
+      <p>Phone: {user.phone}</p>
+    </div>
+  );
+
+  const PaymentCard = ({ payment }) => (
+    <div className="card">
+      <h3>Payment ID: {payment.p_id}</h3>
+      <p>Month: {payment.p_month}</p>
+      <p>Amount: {payment.amount}</p>
+      <p>Customer: {payment.c_name}</p>
+    </div>
+  );
+
   return (
     <div className="App">
+      <ToastContainer />
       <h1>Diwali Payments</h1>
       <div className="button-container">
         <button onClick={() => setActiveForm('addUser')}>Add User</button>
@@ -147,6 +182,11 @@ function App() {
         {activeForm === 'searchUsers' && (
           <div>
             <input
+              placeholder="Search by name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <input
               placeholder="Village"
               value={searchParams.village}
               onChange={(e) => setSearchParams({ ...searchParams, village: e.target.value })}
@@ -168,19 +208,47 @@ function App() {
       {result && (
         <div className="result-container">
           <h2>Result:</h2>
-          <pre>{result}</pre>
+          {activeForm === 'findUser' && result !== '{}' && (
+            <UserCard user={JSON.parse(result)} />
+          )}
+          {activeForm === 'findPayments' && (
+            <div className="card-container">
+              {JSON.parse(result).map((payment) => (
+                <PaymentCard key={payment.p_id} payment={payment} />
+              ))}
+            </div>
+          )}
+          {activeForm === 'viewPaymentsByMonth' && (
+            <div className="card-container">
+              {JSON.parse(result).map((payment) => (
+                <div key={payment.p_id} className="card">
+                  <p>ID: {payment.c_id}</p>
+                  <p>Name: {payment.c_name}</p>
+                  <p>Amount: {payment.amount}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {activeForm === 'totalAmountPaid' && (
+            <div className="card">
+              <h3>Total Amount Paid</h3>
+              <p>User ID: {JSON.parse(result).user_id}</p>
+              <p>Total Amount: {JSON.parse(result).total_amount}</p>
+            </div>
+          )}
+          {(activeForm === '' || activeForm === 'searchUsers') && (
+            <pre>{result}</pre>
+          )}
         </div>
       )}
 
       {/* <div className="users-list">
         <h2>All Users</h2>
-        <ul>
+        <div className="card-container">
           {users.map((user) => (
-            <li key={user._id}>
-              {user._id} - {user.c_name} - {user.c_vill} - {user.c_category}
-            </li>
+            <UserCard key={user._id} user={user} />
           ))}
-        </ul>
+        </div>
       </div> */}
     </div>
   );

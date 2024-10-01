@@ -9,7 +9,7 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-const uri = "mongodb://localhost:27017";
+const uri = "mongodb+srv://rimmanuvel12:Immanuvel%4012@cluster0.6ncy0.mongodb.net/";
 const client = new MongoClient(uri);
 
 let db;
