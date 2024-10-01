@@ -82,6 +82,7 @@ pre {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   padding: 15px;
   width: 250px;
+  position: relative;
 }
 
 .card h3 {
@@ -95,4 +96,23 @@ pre {
 
 .users-list {
   margin-top: 30px;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f;
 }

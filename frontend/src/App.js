@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://diwali-chit-management.onrender.com';
 
 function App() {
   const [activeForm, setActiveForm] = useState('');
@@ -20,8 +20,10 @@ function App() {
   useEffect(() => {
     if (searchTerm.length > 2) {
       handleSearch();
+    } else {
+      fetchAllUsers();
     }
-  }, [searchTerm]);
+  }, [searchTerm, searchParams]);
 
   const fetchAllUsers = async () => {
     try {
@@ -29,6 +31,7 @@ function App() {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users');
     }
   };
 
@@ -36,16 +39,17 @@ function App() {
     e.preventDefault();
     try {
       const response = await axios.post(`${API_URL}${endpoint}`, data);
-      setResult(JSON.stringify(response.data, null, 2));
       if (endpoint === '/add_user') {
         toast.success(`User added with ID: ${response.data.data.id}`);
         fetchAllUsers();
       } else if (endpoint === '/add_payments') {
         toast.success(`Payment added successfully for month: ${data.p_month}, amount: ${data.amount}`);
       }
+      setResult(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      setResult(JSON.stringify(error.response.data, null, 2));
-      toast.error('An error occurred');
+      console.error('Error:', error);
+      toast.error(error.response?.data?.error || 'An error occurred');
+      setResult(JSON.stringify(error.response?.data || {}, null, 2));
     }
   };
 
@@ -54,18 +58,32 @@ function App() {
       const response = await axios.get(`${API_URL}${endpoint}`, { params });
       setResult(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      setResult(JSON.stringify(error.response.data, null, 2));
-      toast.error('An error occurred');
+      console.error('Error:', error);
+      toast.error(error.response?.data?.error || 'An error occurred');
+      setResult(JSON.stringify(error.response?.data || {}, null, 2));
     }
   };
 
   const handleSearch = async () => {
     try {
-      const response = await axios.get(`${API_URL}/search_users`, { params: { ...searchParams, name: searchTerm } });
+      const response = await axios.get(`${API_URL}/search_users`, { 
+        params: { ...searchParams, name: searchTerm } 
+      });
       setUsers(response.data);
     } catch (error) {
       console.error('Error searching users:', error);
       toast.error('An error occurred while searching');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      const response = await axios.delete(`${API_URL}/delete_user/${userId}`);
+      toast.success(`User with ID ${userId} was deleted`);
+      fetchAllUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('An error occurred while deleting the user');
     }
   };
 
@@ -76,6 +94,7 @@ function App() {
       <p>Village: {user.c_vill}</p>
       <p>Category: {user.c_category}</p>
       <p>Phone: {user.phone}</p>
+      <button onClick={() => handleDeleteUser(user._id)} className="delete-btn">Delete User</button>
     </div>
   );
 
@@ -99,7 +118,7 @@ function App() {
         <button onClick={() => setActiveForm('findPayments')}>Find Payments</button>
         <button onClick={() => setActiveForm('viewPaymentsByMonth')}>View Payments by Month</button>
         <button onClick={() => setActiveForm('totalAmountPaid')}>Total Amount Paid</button>
-        <button onClick={() => handleGet('/find_all_users')}>Find All Users</button>
+        <button onClick={() => {setActiveForm(''); fetchAllUsers();}}>Find All Users</button>
         <button onClick={() => setActiveForm('searchUsers')}>Search Users</button>
       </div>
 
@@ -213,20 +232,26 @@ function App() {
           )}
           {activeForm === 'findPayments' && (
             <div className="card-container">
-              {JSON.parse(result).map((payment) => (
-                <PaymentCard key={payment.p_id} payment={payment} />
-              ))}
+              {Array.isArray(JSON.parse(result)) ? 
+                JSON.parse(result).map((payment) => (
+                  <PaymentCard key={payment.p_id} payment={payment} />
+                )) : 
+                <p>No payments found</p>
+              }
             </div>
           )}
           {activeForm === 'viewPaymentsByMonth' && (
             <div className="card-container">
-              {JSON.parse(result).map((payment) => (
-                <div key={payment.p_id} className="card">
-                  <p>ID: {payment.c_id}</p>
-                  <p>Name: {payment.c_name}</p>
-                  <p>Amount: {payment.amount}</p>
-                </div>
-              ))}
+              {Array.isArray(JSON.parse(result)) ?
+                JSON.parse(result).map((payment) => (
+                  <div key={payment.p_id} className="card">
+                    <p>ID: {payment.c_id}</p>
+                    <p>Name: {payment.c_name}</p>
+                    <p>Amount: {payment.amount}</p>
+                  </div>
+                )) :
+                <p>No payments found for this month</p>
+              }
             </div>
           )}
           {activeForm === 'totalAmountPaid' && (
@@ -242,14 +267,14 @@ function App() {
         </div>
       )}
 
-      {/* <div className="users-list">
-        <h2>All Users</h2>
+      <div className="users-list">
+        <h2>Users</h2>
         <div className="card-container">
           {users.map((user) => (
             <UserCard key={user._id} user={user} />
           ))}
         </div>
-      </div> */}
+      </div>
     </div>
   );
 }
