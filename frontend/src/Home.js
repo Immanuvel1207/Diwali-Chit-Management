@@ -4,26 +4,18 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
-const API_URL = 'https://diwali-chit-management.onrender.com';
+const API_URL = 'http://localhost:4000';
 
-function App() {
+function Home() {
   const [activeForm, setActiveForm] = useState('');
   const [result, setResult] = useState('');
-  const [searchParams, setSearchParams] = useState({ village: '', category: '' });
   const [users, setUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-
+  const [searchType, setSearchType] = useState('');
+  const [searchValue, setSearchValue] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   useEffect(() => {
     fetchAllUsers();
   }, []);
-
-  useEffect(() => {
-    if (searchTerm.length > 2) {
-      handleSearch();
-    } else {
-      fetchAllUsers();
-    }
-  }, [searchTerm, searchParams]);
 
   const fetchAllUsers = async () => {
     try {
@@ -40,7 +32,7 @@ function App() {
     try {
       const response = await axios.post(`${API_URL}${endpoint}`, data);
       if (endpoint === '/add_user') {
-        toast.success(`User added with ID: ${response.data.data.id}`);
+        toast.success(`User added with ID: ${response.data.data._id}`);
         fetchAllUsers();
       } else if (endpoint === '/add_payments') {
         toast.success(`Payment added successfully for month: ${data.p_month}, amount: ${data.amount}`);
@@ -65,20 +57,36 @@ function App() {
   };
 
   const handleSearch = async () => {
+    if (!searchType || !searchValue) {
+      toast.error('Please select a search type and enter a search value');
+      return;
+    }
+
+    setIsSearching(true);
     try {
-      const response = await axios.get(`${API_URL}/search_users`, { 
-        params: { ...searchParams, name: searchTerm } 
-      });
+      let params = {};
+      if (searchType === 'name') params.name = searchValue;
+      if (searchType === 'c_category') params.c_category = searchValue;
+      if (searchType === 'c_vill') params.c_vill = searchValue;
+
+      const response = await axios.get(`${API_URL}/search_users`, { params });
       setUsers(response.data);
+      if (response.data.length === 0) {
+        toast.info('No users found matching the search criteria');
+      } else {
+        toast.success(`Found ${response.data.length} user(s)`);
+      }
     } catch (error) {
       console.error('Error searching users:', error);
-      toast.error('An error occurred while searching');
+      toast.error('An error occurred while searching. Please try again.');
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const handleDeleteUser = async (userId) => {
     try {
-      const response = await axios.delete(`${API_URL}/delete_user/${userId}`);
+      await axios.delete(`${API_URL}/delete_user/${userId}`);
       toast.success(`User with ID ${userId} was deleted`);
       fetchAllUsers();
     } catch (error) {
@@ -200,26 +208,37 @@ function App() {
 
         {activeForm === 'searchUsers' && (
           <div>
-            <input
-              placeholder="Search by name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <input
-              placeholder="Village"
-              value={searchParams.village}
-              onChange={(e) => setSearchParams({ ...searchParams, village: e.target.value })}
-            />
-            <select
-              value={searchParams.category}
-              onChange={(e) => setSearchParams({ ...searchParams, category: e.target.value })}
-            >
-              <option value="">All Categories</option>
-              <option value="gold">Gold</option>
-              <option value="silver">Silver</option>
-              <option value="bronze">Bronze</option>
-            </select>
-            <button onClick={handleSearch}>Search Users</button>
+            <div>
+              <button onClick={() => setSearchType('name')}>List by Name</button>
+              <button onClick={() => setSearchType('c_category')}>List by Category</button>
+              <button onClick={() => setSearchType('c_vill')}>List by Village</button>
+            </div>
+            {searchType === 'name' && (
+              <input
+                placeholder="Enter name"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+              />
+            )}
+            {searchType === 'c_category' && (
+              <select
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+              >
+                <option value="">Select Category</option>
+                <option value="gold">Gold</option>
+                <option value="silver">Silver</option>
+                <option value="bronze">Bronze</option>
+              </select>
+            )}
+            {searchType === 'c_vill' && (
+              <input
+                placeholder="Enter village"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+              />
+            )}
+            {searchType && <button onClick={handleSearch}>Search</button>}
           </div>
         )}
       </div>
@@ -267,16 +286,16 @@ function App() {
         </div>
       )}
 
-      {/* <div className="users-list">
+      <div className="users-list">
         <h2>Users</h2>
         <div className="card-container">
           {users.map((user) => (
             <UserCard key={user._id} user={user} />
           ))}
         </div>
-      </div> */}
+      </div>
     </div>
   );
 }
 
-export default App;
+export default Home;

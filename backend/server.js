@@ -9,13 +9,11 @@ const PORT = 4000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Connect to MongoDB
 mongoose.connect('mongodb+srv://rimmanuvel12:Immanuvel%4012@cluster0.6ncy0.mongodb.net/diwali', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-// Define schemas
 const userSchema = new mongoose.Schema({
   _id: Number,
   c_name: String,
@@ -35,12 +33,10 @@ const villageSchema = new mongoose.Schema({
   v_name: String,
 });
 
-// Define models
 const User = mongoose.model('User', userSchema);
 const Payment = mongoose.model('Payment', paymentSchema);
 const Village = mongoose.model('Village', villageSchema);
 
-// Middleware to check if the village exists, if not create it
 async function checkAndCreateVillage(req, res, next) {
   const { c_vill } = req.body;
   try {
@@ -54,7 +50,6 @@ async function checkAndCreateVillage(req, res, next) {
   }
 }
 
-// Route for adding a user
 app.post('/add_user', checkAndCreateVillage, async (req, res) => {
   const { userId, c_name, c_vill, c_category, phone } = req.body;
   try {
@@ -76,10 +71,13 @@ app.post('/add_user', checkAndCreateVillage, async (req, res) => {
   }
 });
 
-// Route for adding payments
 app.post('/add_payments', async (req, res) => {
   const { c_id, p_month, amount } = req.body;
   try {
+    const user = await User.findById(c_id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     const payment = new Payment({
       c_id,
       p_date: new Date(),
@@ -93,7 +91,6 @@ app.post('/add_payments', async (req, res) => {
   }
 });
 
-// Route for calculating total amount paid by a user
 app.get('/total_amount_paid', async (req, res) => {
   const userId = parseInt(req.query.userId);
   try {
@@ -108,7 +105,6 @@ app.get('/total_amount_paid', async (req, res) => {
   }
 });
 
-// Route for finding a user by ID
 app.get('/find_user', async (req, res) => {
   const userId = parseInt(req.query.userId);
   try {
@@ -123,7 +119,6 @@ app.get('/find_user', async (req, res) => {
   }
 });
 
-// Route for finding payments made by a user
 app.get('/find_payments', async (req, res) => {
   const userId = parseInt(req.query.userIdPayments);
   try {
@@ -152,7 +147,6 @@ app.get('/find_payments', async (req, res) => {
   }
 });
 
-// Route for viewing payments by month
 app.get('/view_payments_by_month', async (req, res) => {
   const month = req.query.p_month;
   try {
@@ -181,43 +175,38 @@ app.get('/view_payments_by_month', async (req, res) => {
   }
 });
 
-// Route for finding all users
 app.get('/find_all_users', async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().sort({ _id: 1 });
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Route for searching users by village, category, and name
 app.get('/search_users', async (req, res) => {
-  const { village, category, name } = req.query;
+  const { name, c_category, c_vill } = req.query;
   try {
     let query = {};
-    if (village) query.c_vill = new RegExp(village, 'i');
-    if (category) query.c_category = category;
     if (name) query.c_name = new RegExp(name, 'i');
+    if (c_category) query.c_category = new RegExp(c_category, 'i');
+    if (c_vill) query.c_vill = new RegExp(c_vill, 'i');
 
-    const users = await User.find(query);
+    const users = await User.find(query).sort({ _id: 1 });
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Route for deleting a user and their payments
 app.delete('/delete_user/:userId', async (req, res) => {
   const userId = parseInt(req.params.userId);
   try {
-    // Delete the user
     const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Delete all payments associated with the user
     await Payment.deleteMany({ c_id: userId });
 
     res.json({ message: `User with ID ${userId} and their payments were deleted successfully` });

@@ -11,7 +11,7 @@ const Login = () => {
     e.preventDefault();
 
     // Simple username and password check
-    if (username === 'admin' && password === 'admin') {
+    if (username === 'Admin' && password === 'admin') {
       navigate('/home');
     } else {
       setError('Invalid credentials');
